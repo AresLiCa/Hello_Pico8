@@ -1,8 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 18
 __lua__
--- wall and actor collisions
--- by zep
+-- Corgi Tacover
+-- Powered by Pico-8
 
 actor = {} --all actors in world
 player = {}
@@ -10,6 +10,8 @@ music(0)
 player_walking_anim_time_gap = 0
 scene = "start"
 sprites_list = {32,33,48,49,50,51}
+score = 0
+best_score = 0
 -- make an actor
 -- and add to global collection
 -- x,y means center of the actor
@@ -28,7 +30,8 @@ function make_actor(x, y, _name)
  --a.bounce  = 1
  a.frames=0
 
- 
+ random_seed_spr_generate(a) 
+
  -- half-width and half-height
  -- slightly less than 0.5 so
  -- that will fit through 1-wide
@@ -44,12 +47,39 @@ function make_actor(x, y, _name)
  return a
 end
 
+function random_seed_spr_generate(a)
+  if a.name == "seed" then
+   a.spr=sprites_list[flr(rnd(5)+1)]
+  end
+
+end
+
 function _init()
  -- make player top left
  --pl = make_actor(2,2)
  player = make_actor(128/2, 80,"player")
  player.spr = 0
  player.dy = 0
+
+ -- initialize the best score
+ cartdata("corgi_tacover")
+ -- dset: 0 is highscore
+ -- dset: 1 is if 0 is written
+ if dget(1)~=5 then --first time write
+  best_score = 0
+  dset(0,best_score)
+  dset(1,5) -- mark dset 0 has been written / not the first time
+ else
+  best_score = dget(0)
+ end
+ 
+
+--  if dget(0)~=nil then
+--   best_score = dget(0)
+--  else
+-- --best_score = 0
+--   dset(0,0)
+--  end
 
 
 end
@@ -87,7 +117,7 @@ end
 
 function control_player()
  the_player = get_player()
- player_moving_speed = 1  
+ player_moving_speed = 2  
  if (btn(1)) then 
    the_player.x += player_moving_speed
    the_player.flipx=false
@@ -151,9 +181,16 @@ function remove_actor(a)
             del(actor, a)
         end
 
+        -- picked successfully
         if is_collide(a,get_player()) and get_player()~=nil then
           del(actor, a)
-            
+          score+=1
+
+          if best_score<score then
+           best_score = score
+           dset(0,best_score)
+          end
+
         end
     end
     
@@ -201,7 +238,7 @@ function draw_actor(a)
       local sx = (a.x)
       local sy = (a.y)
       --this will need to be fixed when have time
-      a.spr=sprites_list[flr(rnd(5)+1)]
+      
       spr(a.spr, sx, sy)
     end
 
@@ -241,6 +278,8 @@ function gameplay_draw()
  if(get_player~=nil) then
     --print("player pos: x "..get_player().x.."  y "..get_player().y,0,110,7)
  end
+ print("Best: "..best_score,0,0,7)
+ print("point: "..score,0,10,7)
 end
 
 __gfx__
